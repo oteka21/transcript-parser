@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/toastify-js"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="container px-2 mx-auto my-10">
+      <!-- styled text area with tailwind -->
+      <h1 class="text-2xl pb-5">Pega el texto en formato JSON debajo ⬇️</h1>
+      <div class="w-full">
+        <textarea
+          class="w-full h-64 p-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+          placeholder="Paga el texto de gladia aqui"
+        ></textarea>
+      </div>
+      <div class="flex justify-end">
+        <button
+          class="px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600"
+        >
+          Transformar
+        </button>
+      </div>
+      <div id="result" class="hidden">
+        <h1 class="text-2xl pb-5 text-center">Resultado</h1>
+        <div class="flex justify-end my-4">
+          <button
+            id="copy"
+            class="px-4 py-2 mt-4 text-white bg-green-500 rounded hover:bg-green-600"
+          >
+            Copiar
+          </button>
+        </div>
+        <p id="content"></p>
+      </div>
+    </div>
+    <script>
+      const textArea = document.querySelector("textarea");
+      const button = document.querySelector("button");
+      const content = document.querySelector("#content");
+      const result = document.querySelector("#result");
+      let transcript = "";
+
+      function getTranscript(data) {
+        const text = data.prediction.reduce(
+          (acu, curr) => `${acu} ${curr.transcription}`,
+          ""
+        );
+        return text;
+      }
+
+      button.addEventListener("click", () => {
+        const text = textArea.value;
+        if (!text) {
+          alert("No hay texto para transformar");
+        }
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch (error) {
+          alert("El texto no es un JSON valido");
+        }
+        result.classList.remove("hidden");
+        transcript = getTranscript(json);
+        content.innerHTML = transcript;
+
+        const copyButton = document.querySelector("#copy");
+        copyButton.addEventListener("click", () => {
+          copyToClipboard(transcript);
+        });
+      });
+
+      const copyToClipboard = (str) => {
+        const el = document.createElement("textarea");
+        el.value = str;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+
+        Toastify({
+          text: "transcripcion copiada al portapapeles",
+          duration: 1000,
+          close: true,
+          gravity: "bottom", // `top` or `bottom`
+          position: "right", // `left`, `center` or `right`
+          style: {
+            background: "rgb(59 130 246)",
+            color: 'white'
+          },
+        }).showToast();
+      };
+    </script>
+  </body>
+</html>
