@@ -51,12 +51,41 @@
       const result = document.querySelector("#result");
       let transcript = "";
 
-      function getTranscript(data) {
-        const text = data.prediction.reduce(
-          (acu, curr) => `${acu} ${curr.transcription}`,
-          ""
-        );
-        return text;
+      function getConcatenatedTranscription(textDataArray) {
+        let mergedTranscriptions = [];
+
+        textDataArray.sort((a, b) => a.time_begin - b.time_begin);
+
+        for (let i = 0; i < textDataArray.length; i++) {
+          const current = textDataArray[i];
+          if (mergedTranscriptions.length === 0) {
+            mergedTranscriptions.push(current);
+            continue;
+          }
+
+          const lastMerged =
+            mergedTranscriptions[mergedTranscriptions.length - 1];
+
+          if (lastMerged.time_end >= current.time_begin) {
+            const overlapTime = lastMerged.time_end - current.time_begin;
+            const overlapRate =
+              overlapTime / (current.time_end - current.time_begin);
+            const overlapLength = Math.floor(
+              current.transcription.length * overlapRate
+            );
+
+            lastMerged.transcription +=
+              current.transcription.slice(overlapLength);
+            lastMerged.time_end = Math.max(
+              lastMerged.time_end,
+              current.time_end
+            );
+          } else {
+            mergedTranscriptions.push(current);
+          }
+        }
+
+        return mergedTranscriptions.map((item) => item.transcription).join(" ");
       }
 
       button.addEventListener("click", () => {
@@ -71,7 +100,7 @@
           alert("El texto no es un JSON valido");
         }
         result.classList.remove("hidden");
-        transcript = getTranscript(json);
+        transcript = getConcatenatedTranscription(json.prediction);
         content.innerHTML = transcript;
 
         const copyButton = document.querySelector("#copy");
@@ -96,7 +125,7 @@
           position: "right", // `left`, `center` or `right`
           style: {
             background: "rgb(59 130 246)",
-            color: 'white'
+            color: "white",
           },
         }).showToast();
       };
